@@ -31,6 +31,16 @@
 
 国土交通DPFで利用する市区町村コードとコードに対応する市区町村名の一覧を取得する
 
+## Claude Desktop での使用
+
+Claude Desktop で、MCPサーバーを追加して利用することができます。
+
+1.Claude Desktop で設定画面を開きます
+2.このMCPサーバーを追加します
+3.MCPのサーバーURLに http://localhost:3000 を入力します
+4.保存します
+5.接続します
+
 ## ライセンス
 
 MIT
