@@ -215,5 +215,4 @@ def get_municipality_data(
     return result
 
 if __name__ == "__main__":
-    print('',search_by_attribute('',1,100,'','','大阪府','nlni_ksj','nlni_ksj-p32'))
-    mcp.run()
+    mcp.run(transport="stdio")
