@@ -170,7 +170,7 @@ def get_data(
     return result
 
 @mcp.tool()
-def get_dataCatalog() :
+def get_data_catalog() :
     graph_ql_query = """
         query {
             dataCatalog(IDs: null) {

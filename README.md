@@ -27,7 +27,7 @@
 
  データIDを指定してデータの内容を取得する
 
-5.get_dataCatalog
+5.get_data_catalog
 
 データカタログ、データセット情報を取得する
 
