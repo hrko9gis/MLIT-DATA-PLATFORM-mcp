@@ -46,7 +46,7 @@ Claude Desktop でMCPサーバーを追加して利用することができま�
 1.Claude Desktop で設定画面を開きます
 
 2.このMCPサーバーを追加します
-
+```json
 {
     "mcpServers": {
         "MLIT-DATA-PLATFORM-mcp": {
@@ -60,6 +60,7 @@ Claude Desktop でMCPサーバーを追加して利用することができま�
         }
     }
 }
+```
 
 3.MCPのサーバーURLに http://localhost:3000 を入力します
 
