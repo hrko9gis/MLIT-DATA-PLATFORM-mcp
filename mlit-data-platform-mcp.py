@@ -148,5 +148,4 @@ def getMunicipalityData(
     return result
 
 if __name__ == "__main__":
-    print(search("橋梁",10,5,"title","asc",36.100153659709925,139.1459655761719,35.38736696306863,139.77973937988284))
     mcp.run()
