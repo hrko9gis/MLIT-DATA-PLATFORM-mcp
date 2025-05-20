@@ -36,9 +36,13 @@
 Claude Desktop で、MCPサーバーを追加して利用することができます。
 
 1.Claude Desktop で設定画面を開きます
+
 2.このMCPサーバーを追加します
+
 3.MCPのサーバーURLに http://localhost:3000 を入力します
+
 4.保存します
+
 5.接続します
 
 ## ライセンス
