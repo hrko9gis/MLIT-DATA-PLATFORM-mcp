@@ -40,6 +40,35 @@ def search(
     first: int = 1,
     size: int = 100,
     sortAttributeName: str = "",
+    sortOrder: str = ""
+) -> str:
+    graph_ql_query = """
+        query {
+            search(
+                term: "%s",
+                first: %d,
+                size: %d,
+                sortAttributeName: "%s",
+                sortOrder: "%s"
+            ) 
+            {
+                searchResults {
+                    id
+                    title
+                    metadata
+                }
+            }
+        }
+    """ % (term,first,size,sortAttributeName,sortOrder)
+    result = asyncio.run(post_query(graph_ql_query, 'search'))
+    return result
+
+@mcp.tool()
+def search_by_location_rectangle(
+    term: str = "",
+    first: int = 1,
+    size: int = 100,
+    sortAttributeName: str = "",
     sortOrder: str = "",
     locationRectangleTopLeftLat: float = 0,
     locationRectangleTopLeftLon: float = 0,
@@ -80,7 +109,46 @@ def search(
     return result
 
 @mcp.tool()
-def getData(
+def search_by_attribute(
+    term: str = "",
+    first: int = 1,
+    size: int = 100,
+    sortAttributeName: str = "",
+    sortOrder: str = "",
+    prefecture_name: str = "",
+    catalog_id: str = "",
+    datasetID: str = ""
+) -> str:
+    graph_ql_query = """
+        query {
+            search(
+                term: "%s",
+                first: %d,
+                size: %d,
+                sortAttributeName: "%s",
+                sortOrder: "%s",
+                attributeFilter: {
+                    AND: [
+                        {attributeName: "DPF:prefecture_name", is: "%s" },
+                        {attributeName: "DPF:catalog_id", is: "%s" },
+                        {attributeName: "DPF:dataset_id", is: "%s" }
+                    ]
+                }
+            ) 
+            {
+                searchResults {
+                    id
+                    title
+                    metadata
+                }
+            }
+        }
+    """ % (term,first,size,sortAttributeName,sortOrder,prefecture_name,catalog_id,datasetID)
+    result = asyncio.run(post_query(graph_ql_query, 'search'))
+    return result
+
+@mcp.tool()
+def get_data(
     dataSetID: str = "",
     dataID: str = ""
 ) -> str:
@@ -93,7 +161,6 @@ def getData(
             {
                 totalNumber
                 getDataResults{
-                    id
                     title
                 }
             }
@@ -103,7 +170,7 @@ def getData(
     return result
 
 @mcp.tool()
-def getDataCatalog() :
+def get_dataCatalog() :
     graph_ql_query = """
         query {
             dataCatalog(IDs: null) {
@@ -116,7 +183,7 @@ def getDataCatalog() :
     return result
 
 @mcp.tool()
-def getPrefectureData() :
+def get_prefecture_data() :
     graph_ql_query = """
         query {
             prefecture {
@@ -129,7 +196,7 @@ def getPrefectureData() :
     return result
 
 @mcp.tool()
-def getMunicipalityData(
+def get_municipality_data(
     prefCode: str = ""
 ) -> str:
     graph_ql_query = """
@@ -148,4 +215,5 @@ def getMunicipalityData(
     return result
 
 if __name__ == "__main__":
+    print('',search_by_attribute('',1,100,'','','大阪府','nlni_ksj','nlni_ksj-p32'))
     mcp.run()

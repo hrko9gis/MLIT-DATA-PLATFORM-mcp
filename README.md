@@ -13,21 +13,29 @@
 ## 利用可能なツール
 1.search
 
-条件を指定してデータを検索、取得する
+キーワードを指定してデータを検索、取得する
 
-2.getData
+2.search_by_location_rectangle
+
+キーワードと緯度経度で範囲を指定してデータを検索、取得する
+
+3.search_by_location_rectangle
+
+キーワードと属性情報を指定してデータを検索、取得する
+
+4.getData
 
  データIDを指定してデータの内容を取得する
 
-3.getDataCatalog
+5.getDataCatalog
 
 データカタログ、データセット情報を取得する
 
-4.getPrefectureData
+6.getPrefectureData
 
 国土交通DPFで利用する都道府県コードとコードに対応する都道府県名の一覧を取得する
 
-5.getMunicipalityData
+7.getMunicipalityData
 
 国土交通DPFで利用する市区町村コードとコードに対応する市区町村名の一覧を取得する
 
