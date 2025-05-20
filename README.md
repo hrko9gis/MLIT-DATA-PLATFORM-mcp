@@ -47,6 +47,20 @@ Claude Desktop でMCPサーバーを追加して利用することができま�
 
 2.このMCPサーバーを追加します
 
+{
+    "mcpServers": {
+        "MLIT-DATA-PLATFORM-mcp": {
+            "command": "/Users/***/.local/bin/uv",
+            "args": [
+                "--directory",
+                "＜mlit-data-platform-mcp.pyが存在するディレクトリを絶対パスで指定＞",
+                "run",
+                "mlit-data-platform-mcp.py"
+            ]
+        }
+    }
+}
+
 3.MCPのサーバーURLに http://localhost:3000 を入力します
 
 4.保存します
