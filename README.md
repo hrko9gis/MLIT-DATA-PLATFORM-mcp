@@ -33,7 +33,7 @@
 
 ## Claude Desktop での使用
 
-Claude Desktop で、MCPサーバーを追加して利用することができます。
+Claude Desktop でMCPサーバーを追加して利用することができます。
 
 1.Claude Desktop で設定画面を開きます
 
