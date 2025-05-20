@@ -11,31 +11,31 @@
 - 市区町村コードとコードに対応する市区町村名の一覧の取得
 
 ## 利用可能なツール
-1. search
+#### 1. search
 
 キーワードを指定してデータを検索、取得する
 
-2. search_by_location_rectangle
+#### 2. search_by_location_rectangle
 
 キーワードと緯度経度で範囲を指定してデータを検索、取得する
 
-3. search_by_attribute
+#### 3. search_by_attribute
 
 キーワードと属性情報を指定してデータを検索、取得する
 
-4. get_data
+#### 4. get_data
 
  データIDを指定してデータの内容を取得する
 
-5. get_data_catalog
+#### 5. get_data_catalog
 
 データカタログ、データセット情報を取得する
 
-6. get_prefecture_data
+#### 6. get_prefecture_data
 
 国土交通DPFで利用する都道府県コードとコードに対応する都道府県名の一覧を取得する
 
-7. get_municipality_data
+#### 7. get_municipality_data
 
 国土交通DPFで利用する市区町村コードとコードに対応する市区町村名の一覧を取得する
 
