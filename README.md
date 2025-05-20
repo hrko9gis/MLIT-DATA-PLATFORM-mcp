@@ -19,7 +19,7 @@
 
 キーワードと緯度経度で範囲を指定してデータを検索、取得する
 
-3.search_by_location_rectangle
+3.search_by_attribute
 
 キーワードと属性情報を指定してデータを検索、取得する
 
