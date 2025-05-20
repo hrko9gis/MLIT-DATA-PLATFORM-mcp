@@ -14,15 +14,19 @@
 
 キーワードを指定してデータを検索、取得する
 
-2.getDataCatalog
+2.getData
+
+ データIDを指定してデータの内容を取得する
+
+3.getDataCatalog
 
 データカタログ、データセット情報を取得する
 
-3.getPrefectureData
+4.getPrefectureData
 
 国土交通DPFで利用する都道府県コードとコードに対応する都道府県名の一覧を取得する
 
-4.getMunicipalityData
+5.getMunicipalityData
 
 国土交通DPFで利用する市区町村コードとコードに対応する市区町村名の一覧を取得する
 
