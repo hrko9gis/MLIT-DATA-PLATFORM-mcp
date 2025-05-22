@@ -120,7 +120,12 @@ def build_search_query(
                 searchResults {{
                     id
                     title
+                    dataset_id
                     metadata
+                    meshes {{
+                        title
+                        id
+                    }}
                 }}
             }}
         }}
@@ -166,6 +171,24 @@ async def handle_list_tools() -> list[types.Tool]:
                 },
                 "required": ["location_rectangle_top_left_lat", "location_rectangle_top_left_lon", 
                            "location_rectangle_bottom_right_lat", "location_rectangle_bottom_right_lon"]
+            }
+        ),
+        types.Tool(
+            name="search_by_location_point_distance",
+            description="地点距離での検索を実行します",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "term": {"type": "string", "description": "検索キーワード"},
+                    "first": {"type": "integer", "description": "開始位置", "default": 1},
+                    "size": {"type": "integer", "description": "取得件数", "default": 100},
+                    "sort_attribute_name": {"type": "string", "description": "ソート属性名"},
+                    "sort_order": {"type": "string", "description": "ソート順序"},
+                    "location_lat": {"type": "number", "description": "緯度"},
+                    "location_lon": {"type": "number", "description": "経度"},
+                    "location_distance": {"type": "number", "description": "距離"}
+                },
+                "required": ["location_lat", "location_lon", "location_range"]
             }
         ),
         types.Tool(
@@ -240,6 +263,8 @@ async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent
             result = await search(**arguments)
         elif name == "search_by_location_rectangle":
             result = await search_by_location_rectangle(**arguments)
+        elif name == "search_by_location_point_distance":
+            result = await search_by_location_point_distance(**arguments)
         elif name == "search_by_attribute":
             result = await search_by_attribute(**arguments)
         elif name == "get_data":
@@ -319,6 +344,46 @@ async def search_by_location_rectangle(
                     lat: {location_rectangle_bottom_right_lat},
                     lon: {location_rectangle_bottom_right_lon}
                 }}
+            }}
+        }}
+    """
+    
+    graph_ql_query = build_search_query(
+        term=term,
+        first=first,
+        size=size,
+        sort_attribute_name=sort_attribute_name,
+        sort_order=sort_order,
+        location_filter=location_filter
+    )
+    
+    result = await post_query(graph_ql_query, 'search')
+    return json.dumps(result, ensure_ascii=False, indent=2)
+
+async def search_by_location_point_distance(
+    term: str = "",
+    first: int = 1,
+    size: int = 100,
+    sort_attribute_name: str = "",
+    sort_order: str = "",
+    location_lat: float = 0,
+    location_lon: float = 0,
+    location_distance: float = 0
+) -> str:
+    """地点付近での検索"""
+    
+    # 座標の妥当性チェック
+    if not (-90 <= location_lat <= 90):
+        raise ValueError("Invalid latitude value")
+    if not (-180 <= location_lon <= 180):
+        raise ValueError("Invalid longitude value")
+    
+    location_filter = f"""
+        locationFilter: {{
+            geoDistance: {{
+                lat: {location_lat},
+                lon: {location_lon},
+                distance: {location_distance}
             }}
         }}
     """
