@@ -39,6 +39,23 @@
 
 国土交通DPFで利用する市区町村コードとコードに対応する市区町村名の一覧を取得する
 
+## 必要な依存関係
+
+pip install aiohttp mcp
+
+## 使い方
+
+ローカルにクローンして使用：
+
+```bash
+# リポジトリをクローン
+git clone https://github.com/hrko9gis/MLIT-DATA-PLATFORM-mcp.git
+cd MLIT-DATA-PLATFORM-mcp
+
+# 依存関係のインストールとビルド
+npm install
+npm run build
+
 ## Claude Desktop での使用
 
 Claude Desktop でMCPサーバーを追加して利用することができます。
@@ -67,6 +84,10 @@ Claude Desktop でMCPサーバーを追加して利用することができま�
 4. 保存します
 
 5. 接続します
+
+## APIキー
+
+- 国土交通DPFのAPIキー（[API利用方法]([https://www.reinfolib.mlit.go.jp/help/apiManual/#titleApiApplication](https://www.mlit-data.jp/api_docs/usage/introduction.html))を参照）
 
 ## ライセンス
 
