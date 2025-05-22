@@ -87,7 +87,7 @@ Claude Desktop でMCPサーバーを追加して利用することができま�
 
 ## APIキー
 
-- 国土交通DPFのAPIキー（[API利用方法]([https://www.reinfolib.mlit.go.jp/help/apiManual/#titleApiApplication](https://www.mlit-data.jp/api_docs/usage/introduction.html))を参照）
+- 国土交通DPFのAPIキー（[API利用方法](https://www.reinfolib.mlit.go.jp/help/apiManual/#titleApiApplication)を参照）
 
 ## ライセンス
 
