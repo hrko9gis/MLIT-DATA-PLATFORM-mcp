@@ -19,23 +19,27 @@
 
 キーワードと緯度経度で範囲を指定してデータを検索、取得する
 
-#### 3. search_by_attribute
+#### 3. search_by_location_point_distance
+
+キーワードと中心の緯度経度、半径距離（メートル）を指定してデータを検索、取得する
+
+#### 4. search_by_attribute
 
 キーワードと属性情報を指定してデータを検索、取得する
 
-#### 4. get_data
+#### 5. get_data
 
  データIDを指定してデータの内容を取得する
 
-#### 5. get_data_catalog
+#### 6. get_data_catalog
 
 データカタログ、データセット情報を取得する
 
-#### 6. get_prefecture_data
+#### 7. get_prefecture_data
 
 国土交通DPFで利用する都道府県コードとコードに対応する都道府県名の一覧を取得する
 
-#### 7. get_municipality_data
+#### 8. get_municipality_data
 
 国土交通DPFで利用する市区町村コードとコードに対応する市区町村名の一覧を取得する
 
