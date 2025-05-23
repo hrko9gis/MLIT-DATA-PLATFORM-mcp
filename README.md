@@ -43,6 +43,19 @@
 
 国土交通DPFで利用する市区町村コードとコードに対応する市区町村名の一覧を取得する
 
+## 使い方
+
+ローカルにクローンして使用する場合：
+
+```bash
+# リポジトリをクローン
+git clone https://github.com/hrko9gis/MLIT-DATA-PLATFORM-mcp.git
+cd realestate-library-mcp
+
+# 依存関係のインストールとビルド
+npm install
+npm run build
+
 ## Claude Desktop での使用
 
 Claude Desktop でMCPサーバーを追加して利用することができます。
