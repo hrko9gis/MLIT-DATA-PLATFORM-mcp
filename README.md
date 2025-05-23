@@ -54,10 +54,10 @@ Claude Desktop でMCPサーバーを追加して利用することができま�
 {
     "mcpServers": {
         "MLIT-DATA-PLATFORM-mcp": {
-            "command": "/Users/***/.local/bin/uv",
+            "command": "uv",
             "args": [
                 "--directory",
-                "＜mlit-data-platform-mcp.pyが存在するディレクトリを絶対パスで指定＞"
+                "＜mlit-data-platform-mcp.pyが存在するディレクトリを絶対パスで指定＞",
                 "run",
                 "mlit-data-platform-mcp.py"
             ]
