@@ -55,6 +55,7 @@ cd realestate-library-mcp
 # 依存関係のインストールとビルド
 npm install
 npm run build
+```
 
 ## Claude Desktop での使用
 
