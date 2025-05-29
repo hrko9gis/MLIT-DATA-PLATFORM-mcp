@@ -80,6 +80,9 @@ Claude Desktop でMCPサーバーを追加して利用することができま�
     }
 }
 ```
+
+## Claude Desktop での使用（自分の環境で動作した設定）
+
 ```
 {
     "mcpServers": {
