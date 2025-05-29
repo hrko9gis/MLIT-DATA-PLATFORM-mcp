@@ -79,6 +79,16 @@ Claude Desktop でMCPサーバーを追加して利用することができま�
         }
     }
 }
+
+# 自分の環境での設定
+{
+    "mcpServers": {
+        "MLIT-DATA-PLATFORM-mcp": {
+            "command": "＜mlit-data-platform-mcp.pyが存在するディレクトリを絶対パスで指定＞\\venv\\Scripts\\python.exe",
+            "args": [＜mlit-data-platform-mcp.pyが存在するディレクトリを絶対パスで指定＞\\mlit-data-platform-mcp.py"]
+        }
+    }
+}
 ```
 
 4. 保存します
