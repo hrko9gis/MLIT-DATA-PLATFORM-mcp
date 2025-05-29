@@ -52,9 +52,10 @@
 git clone https://github.com/hrko9gis/MLIT-DATA-PLATFORM-mcp.git
 cd realestate-library-mcp
 
-# 依存関係のインストールとビルド
-npm install
-npm run build
+# Python仮想環境を使用
+uv venv .venv
+.venv\Scripts\activate
+pip install aiohttp mcp
 ```
 
 ## Claude Desktop での使用
@@ -79,8 +80,6 @@ Claude Desktop でMCPサーバーを追加して利用することができま�
     }
 }
 ```
-
-3. MCPのサーバーURLに http://localhost:3000 を入力します
 
 4. 保存します
 
