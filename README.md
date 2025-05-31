@@ -50,7 +50,7 @@
 ```bash
 # リポジトリをクローン
 git clone https://github.com/hrko9gis/MLIT-DATA-PLATFORM-mcp.git
-cd realestate-library-mcp
+cd MLIT-DATA-PLATFORM-mcp
 
 # Python仮想環境を使用
 uv venv .venv
