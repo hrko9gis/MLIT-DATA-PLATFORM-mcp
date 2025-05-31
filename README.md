@@ -58,7 +58,7 @@ uv venv .venv
 pip install aiohttp mcp
 ```
 
-## Claude Desktop での使用
+## Claude Desktop での使用（パスが通っていれば、こちらで問題なく動作する見込み）
 
 Claude Desktop でMCPサーバーを追加して利用することができます。
 
@@ -81,8 +81,16 @@ Claude Desktop でMCPサーバーを追加して利用することができま�
 }
 ```
 
-## Claude Desktop での使用（自分の環境で動作した設定）
+3. 保存します
 
+4. 接続します
+
+## Claude Desktop での使用（自分の環境で動作した設定）
+Claude Desktop でMCPサーバーを追加して利用することができます。
+
+1. Claude Desktop で設定画面を開きます
+
+2. このMCPサーバーを追加します
 ```json
 {
     "mcpServers": {
@@ -94,9 +102,9 @@ Claude Desktop でMCPサーバーを追加して利用することができま�
 }
 ```
 
-4. 保存します
+3. 保存します
 
-5. 接続します
+4. 接続します
 
 ## 必要な依存関係
 
