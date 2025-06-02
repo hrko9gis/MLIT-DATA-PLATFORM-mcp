@@ -23,9 +23,41 @@ server = Server("MLIT-DATA-PLATFORM-mcp")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# 最小限のフィールドセット定義
+MINIMAL_SEARCH_FIELDS = """
+    id
+    title
+    lat
+    lon
+    dataset_id
+"""
+
+BASIC_SEARCH_FIELDS = """
+    id
+    title
+    lat
+    lon
+    year
+    dataset_id
+    catalog_id
+"""
+
+DETAILED_DATA_FIELDS = """
+    id
+    title
+    lat
+    lon
+    year
+    theme
+    metadata
+    dataset_id
+    catalog_id
+    hasThumbnail
+"""
+
 async def post_query(query_contents: str, query_name: str) -> List[Dict[str, Any]]:
     """
-    GraphQLクエリを実行する
+    GraphQLクエリを実行する - 最適化版
     
     Args:
         query_contents: GraphQLクエリ文字列
@@ -36,7 +68,8 @@ async def post_query(query_contents: str, query_name: str) -> List[Dict[str, Any
     """
     headers = {
         "Content-type": "application/json",
-        "apikey": API_KEY
+        "apikey": API_KEY,
+        "Accept-Encoding": "gzip, deflate"  # 圧縮を有効化
     }
     
     data = {"query": query_contents}
@@ -47,7 +80,8 @@ async def post_query(query_contents: str, query_name: str) -> List[Dict[str, Any
                 END_POINT,
                 headers=headers,
                 json=data,
-                timeout=aiohttp.ClientTimeout(total=30)
+                timeout=aiohttp.ClientTimeout(total=30),
+                compress=True  # リクエスト圧縮を有効化
             ) as response:
                 response.raise_for_status()
                 result_data = await response.json()
@@ -79,20 +113,28 @@ async def post_query(query_contents: str, query_name: str) -> List[Dict[str, Any
 def build_search_query(
     term: str = "",
     first: int = 1,
-    size: int = 100,
+    size: int = 50,  # デフォルトサイズを削減
     sort_attribute_name: str = "",
     sort_order: str = "",
     location_filter: Optional[str] = None,
-    attribute_filter: Optional[str] = None
+    attribute_filter: Optional[str] = None,
+    fields: str = BASIC_SEARCH_FIELDS,  # 取得フィールドを指定可能に
+    minimal: bool = False  # 最小限のフィールドのみ取得オプション
 ) -> str:
     """
-    検索用GraphQLクエリを構築する
+    検索用GraphQLクエリを構築する - 最適化版
     """
-    # パラメータの検証
+    # パラメータの検証と最適化
     if not isinstance(first, int) or first < 1:
         first = 1
-    if not isinstance(size, int) or size < 1 or size > 1000:  # 上限設定
-        size = 100
+    if not isinstance(size, int) or size < 1:
+        size = 50
+    if size > 500:  # 上限を500に制限
+        size = 500
+    
+    # 最小限モードの場合は基本フィールドのみ
+    if minimal:
+        fields = MINIMAL_SEARCH_FIELDS
     
     # エスケープ処理
     term = term.replace('"', '\\"')
@@ -118,14 +160,7 @@ def build_search_query(
         query {{
             search({', '.join(query_parts)}) {{
                 searchResults {{
-                    id
-                    title
-                    dataset_id
-                    metadata
-                    meshes {{
-                        title
-                        id
-                    }}
+                    {fields}
                 }}
             }}
         }}
@@ -136,38 +171,40 @@ def build_search_query(
 @server.list_tools()
 async def handle_list_tools() -> list[types.Tool]:
     """
-    利用可能なツールのリストを返す
+    利用可能なツールのリストを返す - 最適化版
     """
     return [
         types.Tool(
             name="search",
-            description="基本検索を実行します",
+            description="基本検索を実行します（最適化版）",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "term": {"type": "string", "description": "検索キーワード"},
                     "first": {"type": "integer", "description": "開始位置", "default": 1},
-                    "size": {"type": "integer", "description": "取得件数", "default": 100},
+                    "size": {"type": "integer", "description": "取得件数（最大500）", "default": 50},
                     "sort_attribute_name": {"type": "string", "description": "ソート属性名"},
-                    "sort_order": {"type": "string", "description": "ソート順序"}
+                    "sort_order": {"type": "string", "description": "ソート順序"},
+                    "minimal": {"type": "boolean", "description": "最小限のフィールドのみ取得", "default": False}
                 }
             }
         ),
         types.Tool(
             name="search_by_location_rectangle",
-            description="矩形範囲での検索を実行します",
+            description="矩形範囲での検索を実行します（最適化版）",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "term": {"type": "string", "description": "検索キーワード"},
                     "first": {"type": "integer", "description": "開始位置", "default": 1},
-                    "size": {"type": "integer", "description": "取得件数", "default": 100},
+                    "size": {"type": "integer", "description": "取得件数（最大500）", "default": 50},
                     "sort_attribute_name": {"type": "string", "description": "ソート属性名"},
                     "sort_order": {"type": "string", "description": "ソート順序"},
                     "location_rectangle_top_left_lat": {"type": "number", "description": "左上緯度"},
                     "location_rectangle_top_left_lon": {"type": "number", "description": "左上経度"},
                     "location_rectangle_bottom_right_lat": {"type": "number", "description": "右下緯度"},
-                    "location_rectangle_bottom_right_lon": {"type": "number", "description": "右下経度"}
+                    "location_rectangle_bottom_right_lon": {"type": "number", "description": "右下経度"},
+                    "minimal": {"type": "boolean", "description": "最小限のフィールドのみ取得", "default": False}
                 },
                 "required": ["location_rectangle_top_left_lat", "location_rectangle_top_left_lon", 
                            "location_rectangle_bottom_right_lat", "location_rectangle_bottom_right_lon"]
@@ -175,42 +212,46 @@ async def handle_list_tools() -> list[types.Tool]:
         ),
         types.Tool(
             name="search_by_location_point_distance",
-            description="地点距離での検索を実行します",
+            description="地点距離での検索を実行します（最適化版）",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "term": {"type": "string", "description": "検索キーワード"},
                     "first": {"type": "integer", "description": "開始位置", "default": 1},
-                    "size": {"type": "integer", "description": "取得件数", "default": 100},
+                    "size": {"type": "integer", "description": "取得件数（最大500）", "default": 50},
                     "sort_attribute_name": {"type": "string", "description": "ソート属性名"},
                     "sort_order": {"type": "string", "description": "ソート順序"},
                     "location_lat": {"type": "number", "description": "緯度"},
                     "location_lon": {"type": "number", "description": "経度"},
-                    "location_distance": {"type": "number", "description": "距離"}
+                    "location_distance": {"type": "number", "description": "距離"},
+                    "minimal": {"type": "boolean", "description": "最小限のフィールドのみ取得", "default": False}
                 },
-                "required": ["location_lat", "location_lon", "location_range"]
+                "required": ["location_lat", "location_lon", "location_distance"]
             }
         ),
         types.Tool(
             name="search_by_attribute",
-            description="属性による検索を実行します",
+            description="属性による検索を実行します（最適化版）",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "term": {"type": "string", "description": "検索キーワード"},
                     "first": {"type": "integer", "description": "開始位置", "default": 1},
-                    "size": {"type": "integer", "description": "取得件数", "default": 100},
+                    "size": {"type": "integer", "description": "取得件数（最大500）", "default": 50},
                     "sort_attribute_name": {"type": "string", "description": "ソート属性名"},
                     "sort_order": {"type": "string", "description": "ソート順序"},
                     "prefecture_name": {"type": "string", "description": "都道府県名"},
+                    "municipality_name": {"type": "string", "description": "市区町村名"},
+                    "address": {"type": "string", "description": "住所"},                    
                     "catalog_id": {"type": "string", "description": "カタログID"},
-                    "dataset_id": {"type": "string", "description": "データセットID"}
+                    "dataset_id": {"type": "string", "description": "データセットID"},
+                    "minimal": {"type": "boolean", "description": "最小限のフィールドのみ取得", "default": False}
                 }
             }
         ),
         types.Tool(
-            name="get_data",
-            description="データを取得します",
+            name="get_data_summary",
+            description="データの概要情報のみを取得します（軽量版）",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -221,8 +262,20 @@ async def handle_list_tools() -> list[types.Tool]:
             }
         ),
         types.Tool(
-            name="get_data_catalog",
-            description="データカタログを取得します",
+            name="get_data",
+            description="データの詳細情報を取得します",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "dataset_id": {"type": "string", "description": "データセットID"},
+                    "data_id": {"type": "string", "description": "データID"}
+                },
+                "required": ["dataset_id", "data_id"]
+            }
+        ),
+        types.Tool(
+            name="get_data_catalog_summary",
+            description="データカタログの概要のみを取得します（軽量版）",
             inputSchema={
                 "type": "object",
                 "properties": {}
@@ -252,7 +305,7 @@ async def handle_list_tools() -> list[types.Tool]:
 @server.call_tool()
 async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent]:
     """
-    ツール呼び出しのハンドラー
+    ツール呼び出しのハンドラー - 最適化版
     """
     logger.info(f"Tool called: {name} with arguments: {arguments}")
     
@@ -267,10 +320,12 @@ async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent
             result = await search_by_location_point_distance(**arguments)
         elif name == "search_by_attribute":
             result = await search_by_attribute(**arguments)
+        elif name == "get_data_summary":
+            result = await get_data_summary(**arguments)
         elif name == "get_data":
             result = await get_data(**arguments)
-        elif name == "get_data_catalog":
-            result = await get_data_catalog()
+        elif name == "get_data_catalog_summary":
+            result = await get_data_catalog_summary()
         elif name == "get_prefecture_data":
             result = await get_prefecture_data()
         elif name == "get_municipality_data":
@@ -283,6 +338,11 @@ async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent
             logger.warning(f"Result is not string, converting: {type(result)}")
             result = str(result)
         
+        # レスポンスサイズを制限（1MB制限）
+        if len(result.encode('utf-8')) > 1024 * 1024:
+            logger.warning(f"Response size too large, truncating")
+            result = result[:1024*1024//2] + "\n... [Response truncated due to size limit]"
+        
         logger.info(f"Tool {name} completed successfully")
         return [types.TextContent(type="text", text=result)]
     
@@ -294,34 +354,39 @@ async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent
 async def search(
     term: str = "",
     first: int = 1,
-    size: int = 100,
+    size: int = 50,
     sort_attribute_name: str = "",
-    sort_order: str = ""
+    sort_order: str = "",
+    minimal: bool = False
 ) -> str:
-    """基本検索"""
+    """基本検索 - 最適化版"""
     graph_ql_query = build_search_query(
         term=term,
         first=first,
         size=size,
         sort_attribute_name=sort_attribute_name,
-        sort_order=sort_order
+        sort_order=sort_order,
+        minimal=minimal
     )
     
     result = await post_query(graph_ql_query, 'search')
-    return json.dumps(result, ensure_ascii=False, indent=2)
+    
+    # コンパクトなJSON出力（インデントなし）
+    return json.dumps(result, ensure_ascii=False, separators=(',', ':'))
 
 async def search_by_location_rectangle(
     term: str = "",
     first: int = 1,
-    size: int = 100,
+    size: int = 50,
     sort_attribute_name: str = "",
     sort_order: str = "",
     location_rectangle_top_left_lat: float = 0,
     location_rectangle_top_left_lon: float = 0,
     location_rectangle_bottom_right_lat: float = 0,
-    location_rectangle_bottom_right_lon: float = 0
+    location_rectangle_bottom_right_lon: float = 0,
+    minimal: bool = False
 ) -> str:
-    """矩形範囲での検索"""
+    """矩形範囲での検索 - 最適化版"""
     
     # 座標の妥当性チェック
     if not (-90 <= location_rectangle_top_left_lat <= 90):
@@ -354,23 +419,25 @@ async def search_by_location_rectangle(
         size=size,
         sort_attribute_name=sort_attribute_name,
         sort_order=sort_order,
-        location_filter=location_filter
+        location_filter=location_filter,
+        minimal=minimal
     )
     
     result = await post_query(graph_ql_query, 'search')
-    return json.dumps(result, ensure_ascii=False, indent=2)
+    return json.dumps(result, ensure_ascii=False, separators=(',', ':'))
 
 async def search_by_location_point_distance(
     term: str = "",
     first: int = 1,
-    size: int = 100,
+    size: int = 50,
     sort_attribute_name: str = "",
     sort_order: str = "",
     location_lat: float = 0,
     location_lon: float = 0,
-    location_distance: float = 0
+    location_distance: float = 0,
+    minimal: bool = False
 ) -> str:
-    """地点付近での検索"""
+    """地点付近での検索 - 最適化版"""
     
     # 座標の妥当性チェック
     if not (-90 <= location_lat <= 90):
@@ -394,38 +461,72 @@ async def search_by_location_point_distance(
         size=size,
         sort_attribute_name=sort_attribute_name,
         sort_order=sort_order,
-        location_filter=location_filter
+        location_filter=location_filter,
+        minimal=minimal
     )
     
     result = await post_query(graph_ql_query, 'search')
-    return json.dumps(result, ensure_ascii=False, indent=2)
+    return json.dumps(result, ensure_ascii=False, separators=(',', ':'))
 
 async def search_by_attribute(
     term: str = "",
     first: int = 1,
-    size: int = 100,
+    size: int = 50,
     sort_attribute_name: str = "",
     sort_order: str = "",
     prefecture_name: str = "",
+    municipality_name: str = "",
+    address: str = "",
     catalog_id: str = "",
-    dataset_id: str = ""
+    dataset_id: str = "",
+    minimal: bool = False
 ) -> str:
-    """属性による検索"""
+    """属性による検索 - 最適化版"""
     
-    # エスケープ処理
-    prefecture_name = prefecture_name.replace('"', '\\"')
-    catalog_id = catalog_id.replace('"', '\\"')
-    dataset_id = dataset_id.replace('"', '\\"')
+    # 有効な条件のみを収集
+    conditions = []
     
-    attribute_filter = f"""
-        attributeFilter: {{
-            AND: [
-                {{attributeName: "DPF:prefecture_name", is: "{prefecture_name}" }},
-                {{attributeName: "DPF:catalog_id", is: "{catalog_id}" }},
-                {{attributeName: "DPF:dataset_id", is: "{dataset_id}" }}
-            ]
-        }}
-    """
+    # 各属性をチェックして、空でない場合のみ条件に追加    
+    if prefecture_name and prefecture_name.strip():
+        escaped_prefecture = prefecture_name.replace('"', '\\"')
+        conditions.append(f'{{attributeName: "DPF:prefecture_name", is: "{escaped_prefecture}" }}')
+    
+    if municipality_name and municipality_name.strip():
+        escaped_municipality = municipality_name.replace('"', '\\"')
+        conditions.append(f'{{attributeName: "DPF:municipality_name", is: "{escaped_municipality}" }}')
+    
+    if address and address.strip():
+        escaped_address = address.replace('"', '\\"')
+        conditions.append(f'{{attributeName: "DPF:address", is: "{escaped_address}" }}')
+    
+    if catalog_id and catalog_id.strip():
+        escaped_catalog = catalog_id.replace('"', '\\"')
+        conditions.append(f'{{attributeName: "DPF:catalog_id", is: "{escaped_catalog}" }}')
+    
+    if dataset_id and dataset_id.strip():
+        escaped_dataset = dataset_id.replace('"', '\\"')
+        conditions.append(f'{{attributeName: "DPF:dataset_id", is: "{escaped_dataset}" }}')
+    
+    # 条件がある場合のみattribute_filterを作成
+    attribute_filter = None
+    if conditions:
+        if len(conditions) == 1:
+            # 条件が1つの場合はANDを使わない
+            attribute_filter = f"""
+                attributeFilter: {{
+                    {conditions[0]}
+                }}
+            """
+        else:
+            # 複数の条件がある場合はANDを使用
+            conditions_str = ',\n                '.join(conditions)
+            attribute_filter = f"""
+                attributeFilter: {{
+                    AND: [
+                        {conditions_str}
+                    ]
+                }}
+            """
     
     graph_ql_query = build_search_query(
         term=term,
@@ -433,22 +534,24 @@ async def search_by_attribute(
         size=size,
         sort_attribute_name=sort_attribute_name,
         sort_order=sort_order,
-        attribute_filter=attribute_filter
+        attribute_filter=attribute_filter,
+        minimal=minimal
     )
     
     result = await post_query(graph_ql_query, 'search')
-    return json.dumps(result, ensure_ascii=False, indent=2)
+    return json.dumps(result, ensure_ascii=False, separators=(',', ':'))
 
-async def get_data(
+async def get_data_summary(
     dataset_id: str = "",
     data_id: str = ""
 ) -> str:
-    """データ取得"""
+    """データ概要取得 - 軽量版"""
     
     # エスケープ処理
     dataset_id = dataset_id.replace('"', '\\"')
     data_id = data_id.replace('"', '\\"')
     
+    # 最小限のフィールドのみ取得
     graph_ql_query = f"""
         query {{
             data(
@@ -462,25 +565,45 @@ async def get_data(
                     lat
                     lon
                     year
-                    theme
-                    favorite
-                    metadata
-                    shape
-                    highlight
                     dataset_id
                     catalog_id
-                    displayOptions
-                    hasThumbnail
                 }}
             }}
         }}
     """
     
     result = await post_query(graph_ql_query, 'data')
-    return json.dumps(result, ensure_ascii=False, indent=2)
+    return json.dumps(result, ensure_ascii=False, separators=(',', ':'))
 
-async def get_data_catalog() -> str:
-    """データカタログ取得"""
+async def get_data(
+    dataset_id: str = "",
+    data_id: str = ""
+) -> str:
+    """データ取得 - 詳細版"""
+    
+    # エスケープ処理
+    dataset_id = dataset_id.replace('"', '\\"')
+    data_id = data_id.replace('"', '\\"')
+    
+    graph_ql_query = f"""
+        query {{
+            data(
+                dataSetID: "{dataset_id}",
+                dataID: "{data_id}"
+            ) {{
+                totalNumber
+                getDataResults{{
+                    {DETAILED_DATA_FIELDS}
+                }}
+            }}
+        }}
+    """
+    
+    result = await post_query(graph_ql_query, 'data')
+    return json.dumps(result, ensure_ascii=False, separators=(',', ':'))
+
+async def get_data_catalog_summary() -> str:
+    """データカタログ概要取得 - 軽量版"""
     graph_ql_query = """
         query {
             dataCatalog(IDs: null) {
@@ -490,7 +613,7 @@ async def get_data_catalog() -> str:
         }
     """
     result = await post_query(graph_ql_query, 'dataCatalog')
-    return json.dumps(result, ensure_ascii=False, indent=2)
+    return json.dumps(result, ensure_ascii=False, separators=(',', ':'))
 
 async def get_prefecture_data() -> str:
     """都道府県データ取得"""
@@ -503,7 +626,7 @@ async def get_prefecture_data() -> str:
         }
     """
     result = await post_query(graph_ql_query, 'prefecture')
-    return json.dumps(result, ensure_ascii=False, indent=2)
+    return json.dumps(result, ensure_ascii=False, separators=(',', ':'))
 
 async def get_municipality_data(pref_code: str = "") -> str:
     """市区町村データ取得"""
@@ -523,35 +646,27 @@ async def get_municipality_data(pref_code: str = "") -> str:
         }}
     """
     result = await post_query(graph_ql_query, 'municipalities')
-    return json.dumps(result, ensure_ascii=False, indent=2)
+    return json.dumps(result, ensure_ascii=False, separators=(',', ':'))
 
 async def main():
-    """メイン関数"""
-    try:
-        # 方法1: stdio_server を使用
-        from mcp.server.stdio import stdio_server
-        
-        async with stdio_server() as (read_stream, write_stream):
-            await server.run(
-                read_stream, 
-                write_stream, 
-                InitializationOptions(
-                    server_name="MLIT-DATA-PLATFORM-mcp",
-                    server_version="1.0.0",
-                    capabilities=server.get_capabilities(
-                        notification_options=NotificationOptions(),
-                        experimental_capabilities={}
-                    )
+    """MCPサーバーのメイン関数"""
+    # 標準入出力を使用してMCPプロトコルで通信
+    import sys
+    from mcp.server.stdio import stdio_server
+    
+    async with stdio_server() as (read_stream, write_stream):
+        await server.run(
+            read_stream, 
+            write_stream, 
+            InitializationOptions(
+                server_name="MLIT-DATA-PLATFORM-mcp",
+                server_version="1.1.0",
+                capabilities=server.get_capabilities(
+                    notification_options=NotificationOptions(),
+                    experimental_capabilities={}
                 )
             )
-    except ImportError:
-        # 方法2: 直接的なstdio実装
-        import sys
-        from mcp.server import stdio
-        
-        await server.run_stdio()
+        )
 
 if __name__ == "__main__":
-    # イベントループを直接実行
-    import asyncio
     asyncio.run(main())
