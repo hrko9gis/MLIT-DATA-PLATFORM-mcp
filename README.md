@@ -27,19 +27,23 @@
 
 キーワードと属性情報を指定してデータを検索、取得する
 
-#### 5. get_data
+#### 5. get_data_summary
 
- データIDを指定してデータの内容を取得する
+データIDを指定してデータの概要情報のみを取得する
 
-#### 6. get_data_catalog
+#### 6. get_data
+
+データIDを指定してデータの詳細情報を取得する
+
+#### 7. get_data_catalog
 
 データカタログ、データセット情報を取得する
 
-#### 7. get_prefecture_data
+#### 8. get_prefecture_data
 
 国土交通DPFで利用する都道府県コードとコードに対応する都道府県名の一覧を取得する
 
-#### 8. get_municipality_data
+#### 9. get_municipality_data
 
 国土交通DPFで利用する市区町村コードとコードに対応する市区町村名の一覧を取得する
 
