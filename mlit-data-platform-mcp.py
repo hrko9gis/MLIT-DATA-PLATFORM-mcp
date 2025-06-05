@@ -136,21 +136,26 @@ def build_search_query(
     if minimal:
         fields = MINIMAL_SEARCH_FIELDS
     
-    # エスケープ処理
-    term = term.replace('"', '\\"')
-    sort_attribute_name = sort_attribute_name.replace('"', '\\"')
-    sort_order = sort_order.replace('"', '\\"')
+    # エスケープ処理と空文字チェック
+    query_parts = []
     
-    query_parts = [
-        f'term: "{term}"',
+    # termが空でない場合のみ追加
+    if term and term.strip():
+        escaped_term = term.replace('"', '\\"')
+        query_parts.append(f'term: "{escaped_term}"')
+    
+    query_parts.extend([
         f'first: {first}',
         f'size: {size}'
-    ]
+    ])
     
-    if sort_attribute_name:
-        query_parts.append(f'sortAttributeName: "{sort_attribute_name}"')
-    if sort_order:
-        query_parts.append(f'sortOrder: "{sort_order}"')
+    # その他のパラメータも空文字チェック
+    if sort_attribute_name and sort_attribute_name.strip():
+        escaped_sort_attr = sort_attribute_name.replace('"', '\\"')
+        query_parts.append(f'sortAttributeName: "{escaped_sort_attr}"')
+    if sort_order and sort_order.strip():
+        escaped_sort_order = sort_order.replace('"', '\\"')
+        query_parts.append(f'sortOrder: "{escaped_sort_order}"')
     if location_filter:
         query_parts.append(location_filter)
     if attribute_filter:
@@ -200,6 +205,7 @@ async def handle_list_tools() -> list[types.Tool]:
                     "size": {"type": "integer", "description": "取得件数（最大500）", "default": 50},
                     "sort_attribute_name": {"type": "string", "description": "ソート属性名"},
                     "sort_order": {"type": "string", "description": "ソート順序"},
+                    "prefecture_code": {"type": "string", "description": "都道府県コード"},
                     "location_rectangle_top_left_lat": {"type": "number", "description": "左上緯度"},
                     "location_rectangle_top_left_lon": {"type": "number", "description": "左上経度"},
                     "location_rectangle_bottom_right_lat": {"type": "number", "description": "右下緯度"},
@@ -221,6 +227,7 @@ async def handle_list_tools() -> list[types.Tool]:
                     "size": {"type": "integer", "description": "取得件数（最大500）", "default": 50},
                     "sort_attribute_name": {"type": "string", "description": "ソート属性名"},
                     "sort_order": {"type": "string", "description": "ソート順序"},
+                    "prefecture_code": {"type": "string", "description": "都道府県コード"},
                     "location_lat": {"type": "number", "description": "緯度"},
                     "location_lon": {"type": "number", "description": "経度"},
                     "location_distance": {"type": "number", "description": "距離"},
@@ -240,8 +247,8 @@ async def handle_list_tools() -> list[types.Tool]:
                     "size": {"type": "integer", "description": "取得件数（最大500）", "default": 50},
                     "sort_attribute_name": {"type": "string", "description": "ソート属性名"},
                     "sort_order": {"type": "string", "description": "ソート順序"},
-                    "prefecture_name": {"type": "string", "description": "都道府県名"},
-                    "municipality_name": {"type": "string", "description": "市区町村名"},
+                    "prefecture_code": {"type": "string", "description": "都道府県コード"},
+                    "municipality_code": {"type": "string", "description": "市区町村コード"},
                     "address": {"type": "string", "description": "住所"},                    
                     "catalog_id": {"type": "string", "description": "カタログID"},
                     "dataset_id": {"type": "string", "description": "データセットID"},
@@ -359,7 +366,7 @@ async def search(
     sort_order: str = "",
     minimal: bool = False
 ) -> str:
-    """基本検索 - 最適化版"""
+    """基本検索 - 最適化版（termの空文字チェック追加）"""
     graph_ql_query = build_search_query(
         term=term,
         first=first,
@@ -380,13 +387,43 @@ async def search_by_location_rectangle(
     size: int = 50,
     sort_attribute_name: str = "",
     sort_order: str = "",
+    prefecture_code: str = "",
     location_rectangle_top_left_lat: float = 0,
     location_rectangle_top_left_lon: float = 0,
     location_rectangle_bottom_right_lat: float = 0,
     location_rectangle_bottom_right_lon: float = 0,
     minimal: bool = False
 ) -> str:
-    """矩形範囲での検索 - 最適化版"""
+    # 有効な条件のみを収集
+    conditions = []
+    
+    # 各属性をチェックして、空でない場合のみ条件に追加    
+    if prefecture_code and prefecture_code.strip():
+        escaped_prefecture = prefecture_code.replace('"', '\\"')
+        conditions.append(f'{{attributeName: "DPF:prefecture_code", is: "{escaped_prefecture}" }}')
+
+    # 条件がある場合のみattribute_filterを作成
+    attribute_filter = None
+    if conditions:
+        if len(conditions) == 1:
+            # 条件が1つの場合はANDを使わない
+            attribute_filter = f"""
+                attributeFilter: {{
+                    {conditions[0]}
+                }}
+            """
+        else:
+            # 複数の条件がある場合はANDを使用
+            conditions_str = ',\n                '.join(conditions)
+            attribute_filter = f"""
+                attributeFilter: {{
+                    AND: [
+                        {conditions_str}
+                    ]
+                }}
+            """
+
+    """矩形範囲での検索 - 最適化版（termの空文字チェック追加）"""
     
     # 座標の妥当性チェック
     if not (-90 <= location_rectangle_top_left_lat <= 90):
@@ -419,6 +456,7 @@ async def search_by_location_rectangle(
         size=size,
         sort_attribute_name=sort_attribute_name,
         sort_order=sort_order,
+        attribute_filter=attribute_filter,
         location_filter=location_filter,
         minimal=minimal
     )
@@ -437,7 +475,36 @@ async def search_by_location_point_distance(
     location_distance: float = 0,
     minimal: bool = False
 ) -> str:
-    """地点付近での検索 - 最適化版"""
+    # 有効な条件のみを収集
+    conditions = []
+    
+    # 各属性をチェックして、空でない場合のみ条件に追加    
+    if prefecture_code and prefecture_code.strip():
+        escaped_prefecture = prefecture_code.replace('"', '\\"')
+        conditions.append(f'{{attributeName: "DPF:prefecture_code", is: "{escaped_prefecture}" }}')
+
+    # 条件がある場合のみattribute_filterを作成
+    attribute_filter = None
+    if conditions:
+        if len(conditions) == 1:
+            # 条件が1つの場合はANDを使わない
+            attribute_filter = f"""
+                attributeFilter: {{
+                    {conditions[0]}
+                }}
+            """
+        else:
+            # 複数の条件がある場合はANDを使用
+            conditions_str = ',\n                '.join(conditions)
+            attribute_filter = f"""
+                attributeFilter: {{
+                    AND: [
+                        {conditions_str}
+                    ]
+                }}
+            """
+
+    """地点付近での検索 - 最適化版（termの空文字チェック追加）"""
     
     # 座標の妥当性チェック
     if not (-90 <= location_lat <= 90):
@@ -461,6 +528,7 @@ async def search_by_location_point_distance(
         size=size,
         sort_attribute_name=sort_attribute_name,
         sort_order=sort_order,
+        attribute_filter=attribute_filter,
         location_filter=location_filter,
         minimal=minimal
     )
@@ -474,26 +542,26 @@ async def search_by_attribute(
     size: int = 50,
     sort_attribute_name: str = "",
     sort_order: str = "",
-    prefecture_name: str = "",
-    municipality_name: str = "",
+    prefecture_code: str = "",
+    municipality_code: str = "",
     address: str = "",
     catalog_id: str = "",
     dataset_id: str = "",
     minimal: bool = False
 ) -> str:
-    """属性による検索 - 最適化版"""
+    """属性による検索 - 最適化版（termの空文字チェック追加）"""
     
     # 有効な条件のみを収集
     conditions = []
     
     # 各属性をチェックして、空でない場合のみ条件に追加    
-    if prefecture_name and prefecture_name.strip():
-        escaped_prefecture = prefecture_name.replace('"', '\\"')
-        conditions.append(f'{{attributeName: "DPF:prefecture_name", is: "{escaped_prefecture}" }}')
+    if prefecture_code and prefecture_code.strip():
+        escaped_prefecture = prefecture_code.replace('"', '\\"')
+        conditions.append(f'{{attributeName: "DPF:prefecture_code", is: "{escaped_prefecture}" }}')
     
-    if municipality_name and municipality_name.strip():
-        escaped_municipality = municipality_name.replace('"', '\\"')
-        conditions.append(f'{{attributeName: "DPF:municipality_name", is: "{escaped_municipality}" }}')
+    if municipality_code and municipality_code.strip():
+        escaped_municipality = municipality_code.replace('"', '\\"')
+        conditions.append(f'{{attributeName: "DPF:municipality_code", is: "{escaped_municipality}" }}')
     
     if address and address.strip():
         escaped_address = address.replace('"', '\\"')
