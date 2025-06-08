@@ -57,7 +57,7 @@ git clone https://github.com/hrko9gis/MLIT-DATA-PLATFORM-mcp.git
 cd MLIT-DATA-PLATFORM-mcp
 
 # Python仮想環境を使用
-uv venv .venv
+uv venv
 .venv\Scripts\activate
 pip install aiohttp mcp
 ```
